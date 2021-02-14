@@ -44,38 +44,3 @@ subplot(style (fig1,showlegend = F),
 
 
 
-######################
-#third = #1880-1950
-#max = 35
-
-third <- df %>%
-  filter (1880 <= year & year <= 1950) 
-
-third_grouped <- third %>%
-  group_by (year, category) %>%
-  mutate(n = n()) 
-
-thirdplot <- ggplot (third_grouped, aes (x=year, y=n)) +
-  geom_col (aes (fill = category))+ ylim (0, 45)
-
-######################
-#fourth = #1951-2020
-#max = 45
-
-fourth <- df %>%
-  filter (1951 <= year & year <= 2020) 
-
-fourth_grouped <- fourth %>%
-  group_by (year, category) %>%
-  mutate(n = n()) 
-
-ggplot (fourth_grouped, aes (x=year, y=n)) +
-  geom_col (aes (fill = category))+ ylim (0, 45)
-
-########################
-#put plots together
-
- firstplot /
-  secondplot /
-  thirdplot /
-  fourthplot 
