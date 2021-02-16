@@ -1,77 +1,104 @@
 ---
-title: "Black First Achivements Timeline"
+title: "Black First Achievements Timeline"
 author: "Joanna Prout"
 date: "2/13/2021"
 output: html_document
 ---
 
-```{r warning=FALSE, echo=FALSE, message=FALSE, fig.height=10, fig.width = 6}
+Challenge using dataset from @DiversityinDate to make timelines of notable Black first achievements.  Not quite working out the way I wanted it to!
+
+```{r warning=FALSE, echo=TRUE, message=FALSE}
 #Notable Black Achievements
-#The 'first' achievements in various fields have historically marked footholds, often leading to more widespread cultural change. The shorthand phrase for this is "breaking the color barrier"
-#"[Black] history is about much more than chronicling a series of “firsts.”  The time and place of a breakthrough reflects not only remarkable individual achievement but is itself an indication of the progress or lack of progress of black people in realizing the centuries-old intertwined goals of freedom, equality, and justice." ~ blackpast.org
-#Datasource: Wikipedia & Kaggle
 
 library (tidyverse)
-library (plotly)
 library (showtext)
+library (patchwork)
+library (plotly)
+
+## Loading Google fonts (https://fonts.google.com/)
+font_add_google("Montserrat")
+font_add_google ("Montserrat Alternates")
 
 showtext_auto ()
 
 df <- read.csv("https://query.data.world/s/conu5g63p5djt76z4v3x2liephcggn", header=TRUE, stringsAsFactors=FALSE)
-
-plot <- df %>% 
-  group_by (year, category) %>%
-  mutate(n = n())%>% 
-  ggplot(
-  aes (x=year, y=n, text=accomplishment)) +
-  geom_col (aes (fill = category)) + 
-  ylim (0, 45) +
-  theme (legend.position = "bottom",
-         legend.title = element_blank()) +
-  scale_fill_brewer(palette = "Dark2") +
-  labs (title = "Notable Black 'First' Achievements in the US")
-
-plot1 <- plot + scale_x_continuous(limits = c(1738, 1808))
-fig1 <- ggplotly(plot1)
-
-plot2 <- plot + scale_x_continuous(limits = c(1809, 1879))  
-fig2 <- ggplotly (plot2)
-
-plot3 <- plot + scale_x_continuous(limits = c(1880, 1950))  
-fig3 <- ggplotly (plot3)
-
-plot4 <- plot + scale_x_continuous(limits= c(1951, 2021)) +
-  theme (legend.position = "bottom")
-fig4 <- ggplotly (plot4)
-
-mainplot <- subplot(style (fig1,showlegend = F), 
-        style (fig2, showlegend = F), 
-        style (fig3, showlegend = F),
-        style (fig4, showlegend = T),
-        nrows=4, 
-        shareX = FALSE)
-
-mainplot
 ```
-```{r}
-grouped2 <- df %>%
+
+```{r achievements by year by category graph, echo = TRUE}
+bycat <-  df %>% 
+  group_by (year, category) %>%
+  mutate(n = n())
+
+timeline <- ggplot (bycat, aes (x=year, y = n, text=accomplishment)) +
+  geom_col (aes(fill = category))
+
+timeline_themed <- timeline +
+  theme (text = element_text (family = "Montserrat Alternates", size = 15),
+          panel.grid = element_blank (),
+          axis.line.x = element_line (),
+          axis.text.y = element_blank (),
+          axis.ticks.x = element_blank (),
+          axis.ticks.y = element_blank (),
+          legend.title = element_blank (),
+          legend.position = "none",
+          panel.background = element_rect(color = "#FFFFCC", fill = "#FFFFCC"),
+          plot.background = element_rect(color = "#FFFFCC", fill = "#FFFFCC")) +
+  scale_fill_manual(values = c("#009999", "#003333", "#669999",
+                               "#336666", "#009999", "#3399CC", "#99CCCC", "#006633")) +
+  labs (x = " ", y = " ")
+
+timeline_themed
+```
+
+```{r making interactive using plotly, echo = TRUE}
+fig1 <- ggplotly (timeline_themed)
+fig1 %>% layout (title = "Notable Black 'First' Achievements over Time") %>% layout (margin = list (t = 100, l = 100, b = 100, r = 100)) 
+```
+
+
+```{r cumulative achievements wave graph, echo=TRUE}
+cumulative <- df %>%
   group_by (year) %>%
   summarize (n = n()) %>%
   mutate (csum = cumsum (n))
 
-wave <- ggplot (grouped2, aes (x=year, y=csum)) +
-  geom_area () +
-  annotate ("text", x=1850, y=400, label = "[Black] history is about much more than chronicling a series of “firsts.”  
-                                            The time and place of a breakthrough reflects 
-                                            not only remarkable individual achievement 
-                                            but is itself an indication of the progress 
-                                            or lack of progress of black people in realizing the centuries-old 
-                                            intertwined goals of freedom, equality, and justice")
+wave <- ggplot (cumulative, aes (x=year, y=csum)) + geom_area (fill ="#66CCCC")
 
-wave
+wave_themed <- wave + theme (text = element_text (family = "Montserrat Alternates", size = 15),
+          plot.title = element_text (family = "Montserrat", face = "bold", size = 17),
+          plot.subtitle = element_text (family = "Montserrat", face = "italic", size = 13),
+          panel.grid = element_blank (),
+          panel.background = element_rect(color = "#FFFFCC", fill = "#FFFFCC"),
+          plot.background = element_rect(color = "#FFFFCC", fill = "#FFFFCC"),
+          axis.text.y = element_blank (),
+          axis.ticks.y = element_blank (),
+          axis.ticks.x = element_line ()) +
+  labs (title = "Black history is about much more than chronicling \na series of 'firsts'",
+        subtitle = "The time and place of a breakthrough reflects \nnot only remarkable individual achievement\nbut is itself an indication of the progress \nor lack of progress of black people\nin realizing the centuries-old intertwined goals\nof freedom, equality, and justice. \n~ blackpast.org ",
+        x = " ", 
+        y = " ")
+ 
+ wave_themed 
+
+``` 
+
+```{r using patchwork to stack ggplots, echo = TRUE}
+wave_themed /
+  timeline_themed 
+
 ```
 
-```{r}
-subplot (mainplot, wave)
-```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
