@@ -1,104 +1,127 @@
 ---
 title: "Black First Achievements Timeline"
 author: "Joanna Prout"
-date: "2/13/2021"
+date: "2/21/2021"
 output: html_document
 ---
 
-Challenge using dataset from @DiversityinDate to make timelines of notable Black first achievements.  Not quite working out the way I wanted it to!
+This is my attempt at making a data viz from a challenge from @DiversityinData for Black History Month.  The data set from blackpast.org (available at https://data.world/diversityindata/february-2021-black-history-month) included a list of notable Black "first achievements" during the years 1738 - 2021 by category, along with the following quotes:
+
+
+The 'first' achievements in various fields have historically marked footholds, often leading to more widespread cultural change. The shorthand phrase for this is "breaking the color barrier"
+
+"[Black] history is about much more than chronicling a series of “firsts.”  The time and place of a breakthrough reflects not only remarkable individual achievement but is itself an indication of the progress or lack of progress of black people in realizing the centuries-old intertwined goals of freedom, equality, and justice." ~ blackpast.org
+
+Datasource: Wikipedia & Kaggle
+
+
+I wanted to capture both individual and collective impact over time.
+
 
 ```{r warning=FALSE, echo=TRUE, message=FALSE}
 #Notable Black Achievements
-
 library (tidyverse)
 library (showtext)
 library (patchwork)
-library (plotly)
+
+df <- read.csv("https://query.data.world/s/conu5g63p5djt76z4v3x2liephcggn", 
+               header=TRUE, stringsAsFactors=FALSE)
+
+#color palette
+bfly.col <- c("5F706A", "#D5B59B", "#C84F36", "#AE8B6D", "#2C2B2C", "#61A89D", "#E7965F", "#793324")
 
 ## Loading Google fonts (https://fonts.google.com/)
-font_add_google("Montserrat")
-font_add_google ("Montserrat Alternates")
+font_add_google("Bebas Neue")
+font_add_google ("Lato")
 
 showtext_auto ()
 
-df <- read.csv("https://query.data.world/s/conu5g63p5djt76z4v3x2liephcggn", header=TRUE, stringsAsFactors=FALSE)
 ```
 
-```{r achievements by year by category graph, echo = TRUE}
-bycat <-  df %>% 
+```{r data wrangling, echo = TRUE, warnng = FALSE, message = FALSE}
+df1 <- df %>%
   group_by (year, category) %>%
-  mutate(n = n())
-
-timeline <- ggplot (bycat, aes (x=year, y = n, text=accomplishment)) +
-  geom_col (aes(fill = category))
-
-timeline_themed <- timeline +
-  theme (text = element_text (family = "Montserrat Alternates", size = 15),
-          panel.grid = element_blank (),
-          axis.line.x = element_line (),
-          axis.text.y = element_blank (),
-          axis.ticks.x = element_blank (),
-          axis.ticks.y = element_blank (),
-          legend.title = element_blank (),
-          legend.position = "none",
-          panel.background = element_rect(color = "#FFFFCC", fill = "#FFFFCC"),
-          plot.background = element_rect(color = "#FFFFCC", fill = "#FFFFCC")) +
-  scale_fill_manual(values = c("#009999", "#003333", "#669999",
-                               "#336666", "#009999", "#3399CC", "#99CCCC", "#006633")) +
-  labs (x = " ", y = " ")
-
-timeline_themed
-```
-
-```{r making interactive using plotly, echo = TRUE}
-fig1 <- ggplotly (timeline_themed)
-fig1 %>% layout (title = "Notable Black 'First' Achievements over Time") %>% layout (margin = list (t = 100, l = 100, b = 100, r = 100)) 
-```
-
-
-```{r cumulative achievements wave graph, echo=TRUE}
-cumulative <- df %>%
-  group_by (year) %>%
   summarize (n = n()) %>%
+  ungroup %>%
+  group_by (category) %>%
   mutate (csum = cumsum (n))
 
-wave <- ggplot (cumulative, aes (x=year, y=csum)) + geom_area (fill ="#66CCCC")
+allyears <- df1 %>% 
+  group_by(category) %>% 
+  complete(year = full_seq(1738:2021, 1)) %>% 
+  group_by (category) %>%
+  fill(csum)
 
-wave_themed <- wave + theme (text = element_text (family = "Montserrat Alternates", size = 15),
-          plot.title = element_text (family = "Montserrat", face = "bold", size = 17),
-          plot.subtitle = element_text (family = "Montserrat", face = "italic", size = 13),
-          panel.grid = element_blank (),
-          panel.background = element_rect(color = "#FFFFCC", fill = "#FFFFCC"),
-          plot.background = element_rect(color = "#FFFFCC", fill = "#FFFFCC"),
-          axis.text.y = element_blank (),
-          axis.ticks.y = element_blank (),
-          axis.ticks.x = element_line ()) +
-  labs (title = "Black history is about much more than chronicling \na series of 'firsts'",
-        subtitle = "The time and place of a breakthrough reflects \nnot only remarkable individual achievement\nbut is itself an indication of the progress \nor lack of progress of black people\nin realizing the centuries-old intertwined goals\nof freedom, equality, and justice. \n~ blackpast.org ",
-        x = " ", 
-        y = " ")
- 
- wave_themed 
-
-``` 
-
-```{r using patchwork to stack ggplots, echo = TRUE}
-wave_themed /
-  timeline_themed 
+allyears[is.na(allyears)] <- 0
+allyears$category <- as.factor (allyears$category)
 
 ```
 
 
 
+```{r stacked area chart, echo=TRUE}
+plot <- ggplot (allyears, aes (x=year, y=csum, fill = category)) + 
+  geom_area () + 
+  scale_y_continuous (position = "right")
+
+plot_total <- plot + theme (text = element_text (family = "Lato", size = 12),
+                                   legend.position = "none",
+                   panel.grid = element_blank (),
+                   axis.line.x = element_line (),
+                   axis.text.y = element_blank (),
+                   axis.ticks.x = element_blank (),
+                   axis.ticks.y = element_blank (),
+                   panel.background = element_rect(color = "#E3E4E1", fill = "#E3E4E1"), #ice cube
+                   plot.background = element_rect(color = "#e3e4e1", fill = "#e3e4e1")) +
+            scale_fill_manual (values = bfly.col) +
+  labs (x = "Year", y = "Achievements")
+
+plot_total
+```
+
+```{r facetted, echo = TRUE}
+facets <- ggplot (allyears, aes (x=year, y=csum, fill = category)) + 
+    geom_area () +
+    facet_wrap(~category, nrow = 2, strip.position = "bottom") 
+
+facets
+
+```
+
+```{r facetted graph plus theme and colors, echo = TRUE}
 
 
+facets_final <- facets +  
+  labs (x = " ", y = " ", caption = "Data from blackpast.org | for @DiversityinData | graphic @joieprout", title = "\nBlack history is about more than chronicling a series of 'firsts'",
+                  subtitle = "\nThe time and place of a breakthrough reflects \nnot only remarkable individual achievement\nbut is itself an indication of the progress \nor lack of progress of black people\nin realizing the centuries-old intertwined goals\nof freedom, equality, and justice. \n\n~ blackpast.org") +
+  scale_fill_manual (values = c("5F706A", "#D5B59B", "#C84F36", "#AE8B6D", "#2C2B2C", "#61A89D", "#E7965F", "#793324")) +
+  theme (text = element_text (family = "Lato", size = 15),
+            plot.title = element_text (family = "Bebas Neue", face = "bold", size = 20),
+                   plot.subtitle = element_text (family = "Lato", face = "italic", size = 12),
+         legend.position = "none",
+         strip.background = element_rect(
+           color="#D5B59B", fill="#d5b59b", size=1.5, linetype="solid"
+         ),
+         panel.grid = element_blank (),
+         panel.background = element_rect(color = "#e3e4e1", fill = "#e3e4e1"),
+         plot.background = element_rect(color = "#e3e4e1", fill = "#e3e4e1"),
+         axis.text.y = element_blank (),
+         axis.ticks.y = element_blank (),
+         axis.ticks.x = element_blank ()) 
+
+facets_final
+```
 
 
+```{r combining plots using inset function, echo=TRUE}
+combo <- facets_final + 
+  inset_element(plot_total, left = 0.6, bottom = 0.5, right = 0.9, top = 0.8, align_to = 'full')
 
+combo
 
+```
 
-
-
-
-
+```{r}
+ggsave ("combo1.pdf", width = 10, height = 6)
+```
 
