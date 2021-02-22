@@ -1,5 +1,5 @@
 ---
-title: "Black First Achievements Timeline"
+title: "Notable Black First Achievements Data Visualization"
 author: "Joanna Prout"
 date: "2/21/2021"
 output: html_document
@@ -8,15 +8,17 @@ output: html_document
 This is my attempt at making a data viz from a challenge from @DiversityinData for Black History Month.  The data set from blackpast.org (available at https://data.world/diversityindata/february-2021-black-history-month) included a list of notable Black "first achievements" during the years 1738 - 2021 by category, along with the following quotes:
 
 
-The 'first' achievements in various fields have historically marked footholds, often leading to more widespread cultural change. The shorthand phrase for this is "breaking the color barrier"
+> The 'first' achievements in various fields have historically marked footholds, often leading to more  >widespread cultural change. The shorthand phrase for this is "breaking the color barrier"
 
-"[Black] history is about much more than chronicling a series of “firsts.”  The time and place of a breakthrough reflects not only remarkable individual achievement but is itself an indication of the progress or lack of progress of black people in realizing the centuries-old intertwined goals of freedom, equality, and justice." ~ blackpast.org
+>"[Black] history is about much more than chronicling a series of “firsts.”  The time and place of a >breakthrough reflects not only remarkable individual achievement but is itself an indication of the >progress or lack of progress of black people in realizing the centuries-old intertwined goals of freedom, >equality, and justice." ~ blackpast.org
 
-Datasource: Wikipedia & Kaggle
+>Datasource: Wikipedia & Kaggle
 
 
-I wanted to capture both individual and collective impact over time.
+These quotes emphasized the importance of BOTH individual and collective impact. I pictured one big wave of impact made up of smaller individual events. I decided to go with a stacked area chart with category of events being the third factor indicated by color.  I wanted to have an interactive graph where the viewer could hover over a point and get a tooltip with the specific event, person involved, and other information but do not know how to use plotly well enough yet.  Maybe some day!
 
+
+Here I am loading packages, reading in the data, and changing the color palette and fonts.
 
 ```{r warning=FALSE, echo=TRUE, message=FALSE}
 #Notable Black Achievements
@@ -38,7 +40,9 @@ showtext_auto ()
 
 ```
 
-```{r data wrangling, echo = TRUE, warnng = FALSE, message = FALSE}
+Now getting the dataset into shape to make a stacked wave chart with year as the x axis, cumulative number of achievements as the y axis, and category of achievement as a third factor differentiated by color.  
+
+```{r data wrangling, echo = TRUE, warning = FALSE, message = FALSE}
 df1 <- df %>%
   group_by (year, category) %>%
   summarize (n = n()) %>%
@@ -57,7 +61,7 @@ allyears$category <- as.factor (allyears$category)
 
 ```
 
-
+Making the stacked area chart..
 
 ```{r stacked area chart, echo=TRUE}
 plot <- ggplot (allyears, aes (x=year, y=csum, fill = category)) + 
@@ -79,6 +83,8 @@ plot_total <- plot + theme (text = element_text (family = "Lato", size = 12),
 plot_total
 ```
 
+One of the limitations of the stacked area chart is that it is difficult to compare the patterns between categories.  To help address this, I used facet_wrap to make 8 smaller plots, one for each category.  I kept the colors the same so the viewer can hopefully link the information from the stacked plot to the facetted plot.
+
 ```{r facetted, echo = TRUE}
 facets <- ggplot (allyears, aes (x=year, y=csum, fill = category)) + 
     geom_area () +
@@ -88,12 +94,12 @@ facets
 
 ```
 
+Then I added in the title, colors, and theme elements.
+
 ```{r facetted graph plus theme and colors, echo = TRUE}
-
-
 facets_final <- facets +  
   labs (x = " ", y = " ", caption = "Data from blackpast.org | for @DiversityinData | graphic @joieprout", title = "\nBlack history is about more than chronicling a series of 'firsts'",
-                  subtitle = "\nThe time and place of a breakthrough reflects \nnot only remarkable individual achievement\nbut is itself an indication of the progress \nor lack of progress of black people\nin realizing the centuries-old intertwined goals\nof freedom, equality, and justice. \n\n~ blackpast.org") +
+                  subtitle = "\nThe time and place of a breakthrough reflects \nnot only remarkable individual achievement\nbut is itself an indication of the progress \nor lack of progress of Black people\nin realizing the centuries-old intertwined goals\nof freedom, equality, and justice. \n\n~ blackpast.org") +
   scale_fill_manual (values = c("5F706A", "#D5B59B", "#C84F36", "#AE8B6D", "#2C2B2C", "#61A89D", "#E7965F", "#793324")) +
   theme (text = element_text (family = "Lato", size = 15),
             plot.title = element_text (family = "Bebas Neue", face = "bold", size = 20),
@@ -112,16 +118,58 @@ facets_final <- facets +
 facets_final
 ```
 
+Finally, I used the patchwork package's inset element function to put the combined area chart at the top of the facetted charts.  I really wanted to have both available on the same visualization.
+
+Looking at both the stacked chart and the small multiple charts shows both the collective impact and thst while many achievements have been made in some areas, other areas, like Law, seem to have more limited opportunities and support for achievement by Black people in the United States.  
 
 ```{r combining plots using inset function, echo=TRUE}
 combo <- facets_final + 
-  inset_element(plot_total, left = 0.6, bottom = 0.5, right = 0.9, top = 0.8, align_to = 'full')
-
+  inset_element(plot_total, left = 0.5, bottom = 0.5, right = 0.9, top = 0.8, align_to = 'full')
 combo
 
 ```
 
-```{r}
-ggsave ("combo1.pdf", width = 10, height = 6)
+If I make a chart that looks okay for the blog then I have to change the font sizing around to make an image file where all the words aren't teeny-tiny.  I am not sure if there is a better way around this.
+
+```{r have to change around to make an image that saves well??}
+facets_final_img <- facets +  
+  labs (x = " ", y = " ", caption = "Data from blackpast.org | for @DiversityinData | graphic @joieprout", title = "\nBlack history is about more than chronicling a series of 'firsts'",
+                  subtitle = "\nThe time and place of a breakthrough reflects \nnot only remarkable individual achievement\nbut is itself an indication of the progress \nor lack of progress of Black people\nin realizing the centuries-old intertwined goals\nof freedom, equality, and justice.\n~ blackpast.org") +
+  scale_fill_manual (values = c("5F706A", "#D5B59B", "#C84F36", "#AE8B6D", "#2C2B2C", "#61A89D", "#E7965F", "#793324")) +
+  theme (text = element_text (family = "Lato", size = 30),
+            plot.title = element_text (family = "Bebas Neue", face = "bold", size = 40),
+                   plot.subtitle = element_text (family = "Lato", face = "italic", size = 28),
+         legend.position = "none",
+         strip.background = element_rect(
+           color="#D5B59B", fill="#d5b59b", size=1.5, linetype="solid"
+         ),
+         panel.grid = element_blank (),
+         panel.background = element_rect(color = "#e3e4e1", fill = "#e3e4e1"),
+         plot.background = element_rect(color = "#e3e4e1", fill = "#e3e4e1"),
+         axis.text.y = element_blank (),
+         axis.ticks.y = element_blank (),
+         axis.ticks.x = element_blank ()) 
+
+#Combined wave chart with bigger font
+plot_total_img <- plot + theme (text = element_text (family = "Lato", size = 24),
+                                   legend.position = "none",
+                   panel.grid = element_blank (),
+                   axis.line.x = element_line (),
+                   axis.text.y = element_blank (),
+                   axis.ticks.x = element_blank (),
+                   axis.ticks.y = element_blank (),
+                   panel.background = element_rect(color = "#E3E4E1", fill = "#E3E4E1"), #ice cube
+                   plot.background = element_rect(color = "#e3e4e1", fill = "#e3e4e1")) +
+            scale_fill_manual (values = bfly.col) +
+  labs (x = "Year", y = "Achievements")
+
+combo <- facets_final_img + 
+  inset_element(plot_total_img, left = 0.5, bottom = 0.5, right = 0.9, top = 0.8, align_to = 'full')
+
+ggsave ("combo.png", dpi = "retina")
+
+
+
 ```
+
 
